@@ -1,0 +1,19 @@
+-There are three accounts that are preloaded into the databse that will work for the login
+  *There is no functionality to be able to add accounts to the database*
+  *Two accounts have addresses associated with them, one does not*
+  
+  Account 1-
+  Username: "msstate"
+  Password: "bulldogs"
+  *has default address*
+  
+  Account 2-
+  Username: "olemiss"
+  Password: "landsharks"
+  *has default address*
+  
+  Account 3- 
+  Username: "alabama"
+  Password: "crimsontide"
+  *no default address*
+  
