@@ -6,11 +6,14 @@ Group assignment number 3. CLI store program using SQLite3.
 ------------
 #To install SQLite3:
 
-for python version 2:
+For python version 2:
+
 $ pip install db-sqlite3 
 
 or:
-for python version 3:
+
+For python version 3:
+
 $ pip3 install db-sqlite3
 
-More details: https://pypi.org/project/db-sqlite3/
+More details on installing python module sqlite3: https://pypi.org/project/db-sqlite3/
