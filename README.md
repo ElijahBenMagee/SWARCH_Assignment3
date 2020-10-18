@@ -10,10 +10,19 @@ For python version 2:
 
 $ pip install db-sqlite3 
 
-or:
-
 For python version 3:
 
 $ pip3 install db-sqlite3
 
 More details on installing python module sqlite3: https://pypi.org/project/db-sqlite3/
+
+----------------
+Using the Loging_info file for authorization credintionals:
+
+If your sqlite3 module installed on the python version 2 use:
+
+  $python store.py 
+ 
+ Otherwise, use the following command:
+ 
+   $python3 store.py
