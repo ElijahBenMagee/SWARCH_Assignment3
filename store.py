@@ -58,7 +58,9 @@ def mainPage(currUserID,user):
 
 class User:
     def __init__(self):
-        pass
+        self.name = ""
+        self.password = ""
+        self.cart = None
  
     #login setup function
     def loginSetup(self):
@@ -135,7 +137,9 @@ class User:
 
 class Item:
    def __init__(self):
-           pass
+           self.name = ""
+           self.price = 0
+           self.descitption = ""
    #displays all the items the store has in stock
    def displayItems(self):
 
@@ -156,7 +160,9 @@ class Item:
 #displays items in the current cart
 class Cart:
     def __init__(self):
-            pass            
+            self.cost = 0
+            self.items = []
+            self.user = User()
     def cartDisplay(self,currUserID, shoppingCart):
 
         if (shoppingCart == []):
@@ -186,7 +192,7 @@ class Cart:
 
         #give the user options on what to do with their cart
         while True:
-                #try:
+                try:
                         cartStatus = int(input("\n What would you like to do?:\n\n 1. Proceed to checkout\n 2. Remove an item from your cart\n 3. Delete all items in your cart\n Select 1, 2, or 3: "))
 
                         #checkout
@@ -208,8 +214,8 @@ class Cart:
                         else:
                                 print("\n ***Please input a valid option. (1, 2, or 3)***")
                 
-                #except Exception as ex:
-                #   print("\n ***Please input a valid option. (1, 2, or 3)***")
+                except Exception as ex:
+                   print("\n ***Please input a valid option. (1, 2, or 3)***")
 
 	
 #adds items to the cart
@@ -295,86 +301,86 @@ class Cart:
 
 
 #checkout when the user is satisfied with their cart
-def checkout(self,currUserID, shoppingCart):
+def checkout(currUserID, shoppingCart):
+        print("Working")
+        #getting address associated with address
+        records = cur.execute("SELECT ADDRESS FROM USERS WHERE USERID = ?", (currUserID, ))
+        row = records.fetchone()
 
-	#getting address associated with address
-	records = cur.execute("SELECT ADDRESS FROM USERS WHERE USERID = ?", (currUserID, ))
-	row = records.fetchone()
+        #determining if the account has an address associated with it
+        if (row[0] != None):
+                print("\n Address infromation is already established.")
+                address = row[0]
 
-	#determining if the account has an address associated with it
-	if (row[0] != None):
-		print("\n Address infromation is already established.")
-		address = row[0]
+        #inputing address if there is none and updating db
+        else:
+                address = input(" Please provide your shipping address: ")
+                cur.execute("UPDATE USERS SET ADDRESS = ? WHERE USERID = ?", (address, currUserID, ))
+                print("\n Thank you. Your information has been stored for future use. ")
+                
+        #getting the credit card number of the user
+        while True:
+                creditCard = input(" Please input your 10 digit credit card number: ")
 
-	#inputing address if there is none and updating db
-	else:
-		address = input(" Please provide your shipping address: ")
-		cur.execute("UPDATE USERS SET ADDRESS = ? WHERE USERID = ?", (address, currUserID, ))
-		print("\n Thank you. Your information has been stored for future use. ")
-		
-	#getting the credit card number of the user
-	while True:
-		creditCard = input(" Please input your 10 digit credit card number: ")
+                if ((creditCard.isdigit()) and (len(str(creditCard)) == 10)):
+                        creditCard = int(creditCard)
+                        break
 
-		if ((creditCard.isdigit()) and (len(str(creditCard)) == 10)):
-			creditCard = int(creditCard)
-			break
+                else:
+                        print("\n ***Please enter a valid 10 digit credit card number (1234567890).***")
 
-		else:
-			print("\n ***Please enter a valid 10 digit credit card number (1234567890).***")
+        #creating an order entry in db
+        cur.execute("INSERT INTO ORDERS (USERID)\
+                VALUES(?)", (currUserID, ))
 
-	#creating an order entry in db
-	cur.execute("INSERT INTO ORDERS (USERID)\
-		VALUES(?)", (currUserID, ))
+        #getting orderid of the newley created order instance
+        records = cur.execute("SELECT MAX(ORDERID) FROM ORDERS WHERE USERID = ?", (currUserID, ))
+        row = records.fetchone()
+        orderId = row[0]
+        
+        total = 0
 
-	#getting orderid of the newley created order instance
-	records = cur.execute("SELECT MAX(ORDERID) FROM ORDERS WHERE USERID = ?", (currUserID, ))
-	row = records.fetchone()
-	orderId = row[0]
-	
-	total = 0
+        #iterating through shopping cart
+        for item in shoppingCart:
+                price = 0
+                itemId = item[0]
+                itemQuantity = item[2]
 
-	#iterating through shopping cart
-	for item in shoppingCart:
-		price = 0
-		itemId = item[0]
-		itemQuantity = item[2]
+                #getting price of the current item in the cart
+                records = cur.execute("SELECT PRICE FROM ITEMS WHERE ITEMID = ?", (itemId, ))
+                row = records.fetchone()
+                price = row[0]
 
-		#getting price of the current item in the cart
-		records = cur.execute("SELECT PRICE FROM ITEMS WHERE ITEMID = ?", (itemId, ))
-		row = records.fetchone()
-		price = row[0]
+                #updating order total based on price and quantity
+                total += price * itemQuantity
 
-		#updating order total based on price and quantity
-		total += price * itemQuantity
+                #inserting info into order composition table
+                cur.execute("INSERT INTO ORDER_COMP (ORDERID, ITEMID, QUANTITY)\
+                        VALUES (?, ?, ?)", (orderId, itemId, itemQuantity, ))
 
-		#inserting info into order composition table
-		cur.execute("INSERT INTO ORDER_COMP (ORDERID, ITEMID, QUANTITY)\
-			VALUES (?, ?, ?)", (orderId, itemId, itemQuantity, ))
+                #getting current stock quantity of the item
+                records = cur.execute("SELECT QUANTITY FROM ITEMS WHERE ITEMID = ?", (itemId, ))
+                row = records.fetchone()
+                currQuantity = row[0]
 
-		#getting current stock quantity of the item
-		records = cur.execute("SELECT QUANTITY FROM ITEMS WHERE ITEMID = ?", (itemId, ))
-		row = records.fetchone()
-		currQuantity = row[0]
+                #updating stock number and updating db
+                updatedQuantity = currQuantity - itemQuantity
+                cur.execute("UPDATE ITEMS SET QUANTITY = ? WHERE ITEMID = ?", (updatedQuantity, itemId))
 
-		#updating stock number and updating db
-		updatedQuantity = currQuantity - itemQuantity
-		cur.execute("UPDATE ITEMS SET QUANTITY = ? WHERE ITEMID = ?", (updatedQuantity, itemId))
+        #inserting purchase into the past purchase table
+        cur.execute("INSERT INTO PAST_PURCHASES (USERID, ORDERID, CREDITCARD, TOTAL)\
+                VALUES (?, ?, ?, ?)", (currUserID, orderId, creditCard, total))
 
-	#inserting purchase into the past purchase table
-	cur.execute("INSERT INTO PAST_PURCHASES (USERID, ORDERID, CREDITCARD, TOTAL)\
-		VALUES (?, ?, ?, ?)", (currUserID, orderId, creditCard, total))
+        conn.commit()
 
-	conn.commit()
+        #printing out order confirmation
+        print("\n ----- Order Confirmed. -----")
+        print("{:<10s}{:<15s}{:<25s}{:<45s}".format("\nOrderID", "Total", "Credit Card #", "Shipping Address"))
+        print("{:<10d}{:<15.2f}{:<25d}{:<45s}".format(orderId, total, creditCard, address))
 
-	#printing out order confirmation
-	print("\n ----- Order Confirmed. -----")
-	print("{:<10s}{:<15s}{:<25s}{:<45s}".format("\nOrderID", "Total", "Credit Card #", "Shipping Address"))
-	print("{:<10d}{:<15.2f}{:<25d}{:<45s}".format(orderId, total, creditCard, address))
-
-	#returning to main page after purchase is done
-	user=User()
-	mainPage(currUserID,user)
+        #returning to main page after purchase is done
+        user=User()
+        mainPage(currUserID,user)
 
 
 #main function of the program
